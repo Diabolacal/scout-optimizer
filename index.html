@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scout Optimizer</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; }
+        .btn { @apply px-4 py-2 bg-indigo-600 text-white rounded-md font-semibold shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-opacity-75 disabled:bg-gray-500 disabled:cursor-not-allowed transition-colors; }
+        .input-field {
+            @apply mt-1 block w-full px-3 py-2 bg-gray-200 border border-gray-500 rounded-md shadow-sm font-medium placeholder-gray-500 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm;
+            color: black; 
+        }
+        .info-text { @apply text-sm text-gray-400; }
+        summary { list-style: none; }
+        summary::-webkit-details-marker { display: none; }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-300">
+
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-white">Scout Optimizer</h1>
+            <p class="mt-2 text-lg text-gray-400">Find the most efficient route between solar systems.</p>
+        </header>
+
+        <details class="mb-6 bg-gray-800 border border-gray-700 rounded-lg p-4">
+            <summary class="cursor-pointer text-indigo-400 hover:text-indigo-300 font-medium">
+                How does this work? (Click to expand)
+            </summary>
+            <div class="mt-4 text-left text-gray-400 text-sm space-y-4">
+                <div>
+                    <h3 class="font-semibold text-white mb-1">Overview</h3>
+                    <p>This tool finds the shortest travel path between a start system and all other systems within a given radius based on direct, point-to-point distances. It does not take into account stargates or smartgates. Therefore, it is best used for generating an optimal route for a ship's jump drive, particularly for navigating dense collections of stars (like those near a trinary system) or other areas with otherwise unconnected systems.</p>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-white mb-1">Optimization Parameters</h3>
+                    <ul class="list-disc list-inside space-y-2 pl-2">
+                        <li><strong>Passes:</strong> The number of refinement rounds the algorithm will perform. For complex routes with many systems, more passes increase the chance of finding a better solution.</li>
+                        <li><strong>Time/Pass (s):</strong> The number of seconds each CPU core will spend searching for improvements during a single pass. A larger number of systems requires more time per pass to be effective. The application will show a recommended minimum time next to this field.</li>
+                    </ul>
+                </div>
+                 <div>
+                    <h3 class="font-semibold text-white mb-1">How to Use</h3>
+                     <ul class="list-disc list-inside space-y-2 pl-2">
+                        <li><strong>Calculate Optimal Route:</strong> Starts a fresh calculation.</li>
+                        <li><strong>Continue Optimization:</strong> Appears after a run is finished. Clicking it will use the previous best route as a starting point for more passes, allowing you to dedicate more time to the search.</li>
+                        <li><strong>Stop Calculation:</strong> Appears while a calculation is running. You can click this to interrupt the process between passes if you see the route distance has stopped improving.</li>
+                    </ul>
+                </div>
+            </div>
+        </details>
+
+        <main class="bg-gray-800 p-6 rounded-lg shadow-lg border border-gray-700">
+            <!-- Input Section -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="startSystem" class="block text-sm font-medium text-gray-300">Start System</label>
+                    <input type="text" id="startSystem" class="input-field" placeholder="e.g., Jita">
+                </div>
+                <div>
+                    <label for="maxRadius" class="block text-sm font-medium text-gray-300">Max Radius (LY)</label>
+                    <input type="number" id="maxRadius" class="input-field" placeholder="e.g., 50">
+                </div>
+            </div>
+
+            <!-- Info Text -->
+            <div class="text-center mb-6">
+                <p class="info-text">Reflex range with D1 fuel 450 ly</p>
+                <p class="info-text">Reflex range with D2 fuel 690 ly</p>
+            </div>
+
+            <!-- Options Section -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6 items-end">
+                <div>
+                    <label for="numPasses" class="block text-sm font-medium text-gray-300">Passes</label>
+                    <input type="number" id="numPasses" class="input-field" value="3">
+                </div>
+                <div>
+                    <label for="timePerPass" class="block text-sm font-medium text-gray-300">Time/Pass (s)</label>
+                    <input type="number" id="timePerPass" class="input-field" value="5">
+                </div>
+                <div class="flex items-center">
+                     <p id="timeRecommendation" class="info-text ml-2"></p>
+                </div>
+            </div>
+
+            <!-- Action Button -->
+            <div class="text-center mb-6">
+                <button id="calculateButton" class="btn w-full md:w-auto">Calculate Optimal Route</button>
+            </div>
+
+            <!-- Results Section -->
+            <div>
+                <h2 class="text-xl font-semibold mb-2 text-white">Results</h2>
+                <div id="resultsOutput" class="w-full h-64 p-3 bg-gray-900 border border-gray-700 rounded-md overflow-y-auto font-mono text-sm whitespace-pre-wrap text-gray-300">
+                    <span class="text-gray-500">Results will appear here...</span>
+                </div>
+                <div id="copyButtonFrame" class="mt-4 flex justify-end space-x-2"></div>
+            </div>
+
+            <!-- Status Bar -->
+            <div id="statusBar" class="mt-6 text-center text-sm text-gray-400 font-medium">Status: Idle</div>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/pyodide/v0.25.1/full/pyodide.js"></script>
+    <script type="module" id="main-script">
+        // Main application logic
+        const calculateButton = document.getElementById('calculateButton');
+        const resultsOutput = document.getElementById('resultsOutput');
+        const statusBar = document.getElementById('statusBar');
+        const copyButtonFrame = document.getElementById('copyButtonFrame');
+        const timeRecommendation = document.getElementById('timeRecommendation');
+
+        let isCalculating = false;
+        let stopCalculation = false;
+        let universeData = null;
+        let championPath = null;
+        let championStartSystem = null;
+        let championRadius = null;
+        let workerPool = [];
+
+        const METERS_PER_LIGHT_YEAR = 9.461e15;
+
+        function logMessage(message) {
+            if (resultsOutput.querySelector('span')) {
+                resultsOutput.innerHTML = '';
+            }
+            resultsOutput.innerHTML += message + '\n';
+            resultsOutput.scrollTop = resultsOutput.scrollHeight;
+        }
+
+        async function initializeApp() {
+            logMessage("Initializing application...");
+            statusBar.textContent = "Status: Loading Pyodide & universe data...";
+            
+            try {
+                const dataWorker = new Worker('data_loader_worker.js');
+                dataWorker.onmessage = (event) => {
+                    if (event.data.type === 'success') {
+                        universeData = event.data.data;
+                        logMessage("Universe data loaded successfully.");
+                        statusBar.textContent = "Status: Ready.";
+                    } else {
+                        logMessage(`Error loading universe data: ${event.data.error}`);
+                        statusBar.textContent = "Error: Could not load universe data.";
+                        calculateButton.disabled = true;
+                    }
+                    dataWorker.terminate();
+                };
+                dataWorker.onerror = (error) => {
+                    logMessage(`Data loader worker error: ${error.message}`);
+                    statusBar.textContent = "Error: Could not load universe data.";
+                    calculateButton.disabled = true;
+                    dataWorker.terminate();
+                };
+                dataWorker.postMessage({ action: 'loadData' });
+            } catch (error) {
+                 logMessage(`Initialization failed: ${error}`);
+                 statusBar.textContent = "Error: Initialization failed.";
+            }
+        }
+        
+        async function runCalculation() {
+            isCalculating = true;
+            stopCalculation = false;
+            calculateButton.textContent = "Stop Calculation";
+            copyButtonFrame.innerHTML = '';
+
+            try {
+                const startSystemInput = document.getElementById('startSystem').value.trim();
+                const radiusStr = document.getElementById('maxRadius').value.trim();
+                const numPasses = parseInt(document.getElementById('numPasses').value, 10);
+                const timePerPass = parseInt(document.getElementById('timePerPass').value, 10);
+
+                if (!startSystemInput || !radiusStr) throw new Error("Please enter both a start system and a radius.");
+
+                const startSystemName = Object.keys(universeData).find(k => k.toLowerCase() === startSystemInput.toLowerCase());
+                if (!startSystemName) throw new Error(`Start system '${startSystemInput}' not found.`);
+
+                if (championStartSystem !== startSystemName || championRadius !== radiusStr) {
+                    resultsOutput.innerHTML = '';
+                    logMessage("New parameters detected, starting fresh calculation...");
+                    championPath = null;
+                } else {
+                    logMessage("\n--- Continuing optimization from previous best ---");
+                }
+
+                let systemsInRadius, systemsDataForTrip;
+
+                const numWorkers = navigator.hardwareConcurrency || 2;
+                if (workerPool.length === 0) {
+                    statusBar.textContent = "Status: Initializing worker pool...";
+                    for (let i = 0; i < numWorkers; i++) {
+                        workerPool.push(new Worker('worker.js'));
+                    }
+                    await Promise.all(workerPool.map(w => new Promise(res => w.onmessage = e => { if(e.data.type === 'ready') res(); })));
+                }
+
+                if (!championPath) {
+                    logMessage(`Finding systems within ${radiusStr} LY of ${startSystemName}...`);
+                    const startCoords = universeData[startSystemName];
+                    systemsInRadius = Object.keys(universeData).filter(name => {
+                        const data = universeData[name];
+                        const dist = Math.sqrt((startCoords.x - data.x)**2 + (startCoords.y - data.y)**2 + (startCoords.z - data.z)**2);
+                        return (dist / METERS_PER_LIGHT_YEAR) <= parseFloat(radiusStr);
+                    });
+
+                    if (systemsInRadius.length < 2) throw new Error("No other systems found in range.");
+                    
+                    const recommendedTime = 3 + Math.floor(systemsInRadius.length / 50);
+                    timeRecommendation.textContent = `(Rec: ${recommendedTime}s)`;
+                    logMessage(`Found ${systemsInRadius.length} systems. Calculating baseline route...`);
+                    
+                    systemsDataForTrip = systemsInRadius.reduce((acc, name) => ({...acc, [name]: universeData[name]}), {});
+
+                    statusBar.textContent = "Status: Calculating baseline route...";
+                    const baselineResult = await runSinglePassOnWorker(workerPool[0], systemsInRadius, systemsDataForTrip, 0, true);
+                    
+                    if (baselineResult.error) {
+                        throw new Error(`Baseline calculation failed: ${baselineResult.error}`);
+                    }
+                    
+                    // --- FIX: Reorder the baseline path to start with the correct system ---
+                    let baselinePath = baselineResult.path;
+                    const startIndex = baselinePath.indexOf(startSystemName);
+                    championPath = [...baselinePath.slice(startIndex), ...baselinePath.slice(0, startIndex)];
+
+                    logFullRoute(championPath, systemsDataForTrip, "--- 🚀 Baseline Route ---");
+
+                } else {
+                    systemsInRadius = championPath;
+                    systemsDataForTrip = systemsInRadius.reduce((acc, name) => ({...acc, [name]: universeData[name]}), {});
+                }
+                
+                for (let i = 0; i < numPasses; i++) {
+                    if (stopCalculation) {
+                        logMessage("\n--- Calculation stopped by user. ---");
+                        break;
+                    }
+                    statusBar.textContent = `Status: Running Pass ${i + 1} of ${numPasses}...`;
+                    
+                    const passPromises = workerPool.map(worker => runSinglePassOnWorker(worker, championPath, systemsDataForTrip, timePerPass, false));
+                    const results = await Promise.all(passPromises);
+                    
+                    let passChampion = results.reduce((best, current) => current.distance < best.distance ? current : best);
+                    let championDist = calculateTotalDistance(championPath, systemsDataForTrip);
+
+                    if (passChampion.distance < championDist) {
+                        championPath = passChampion.path;
+                    }
+                    
+                    const startIndex = championPath.indexOf(startSystemName);
+                    championPath = [...championPath.slice(startIndex), ...championPath.slice(0, startIndex)];
+
+                    logMessage(`Pass ${i + 1} best distance: ${(calculateTotalDistance(championPath, systemsDataForTrip) / METERS_PER_LIGHT_YEAR).toFixed(2)} LY`);
+                }
+
+                championStartSystem = startSystemName;
+                championRadius = radiusStr;
+                logFullRoute(championPath, systemsDataForTrip, "--- ✅ Final Optimized Route ---");
+                updateCopyButtons();
+
+            } catch (error) {
+                logMessage(`Error: ${error.message}`);
+                statusBar.textContent = "Status: Error";
+            } finally {
+                isCalculating = false;
+                calculateButton.textContent = "Continue Optimization";
+                calculateButton.disabled = false;
+                statusBar.textContent = "Status: Finished.";
+            }
+        }
+        
+        function runSinglePassOnWorker(worker, path, systemsData, timePerPass, isBaseline = false) {
+            return new Promise((resolve, reject) => {
+                const taskId = Date.now() + Math.random();
+                
+                const messageHandler = (event) => {
+                    if (event.data.id === taskId) {
+                        if (event.data.type === 'result') {
+                            if (event.data.result.error) reject(new Error(event.data.result.error));
+                            else resolve(event.data.result);
+                        } else if (event.data.type === 'error') {
+                            reject(new Error(event.data.error));
+                        }
+                        worker.removeEventListener('message', messageHandler);
+                    }
+                };
+                
+                worker.addEventListener('message', messageHandler);
+                worker.postMessage({ id: taskId, path, systemsData, timePerPass, isBaseline });
+            });
+        }
+        
+        function logFullRoute(path, systemsData, title) {
+            logMessage(`\n${title}`);
+            logMessage("\nOptimal Travel Order:");
+            path.forEach((systemName, i) => logMessage(`${i + 1}. ${systemName}`));
+
+            const distanceM = calculateTotalDistance(path, systemsData);
+            logMessage(`\n  -> Total Route Distance: ${(distanceM / METERS_PER_LIGHT_YEAR).toFixed(2)} LY`);
+            
+            const startCoords = systemsData[path[0]];
+            const endCoords = systemsData[path[path.length - 1]];
+            const returnDistM = Math.sqrt((startCoords.x - endCoords.x)**2 + (startCoords.y - endCoords.y)**2 + (startCoords.z - endCoords.z)**2);
+            logMessage(`  -> Return to Start: ${(returnDistM / METERS_PER_LIGHT_YEAR).toFixed(2)} LY`);
+        }
+
+        function calculateTotalDistance(path, systemsData) {
+            let totalDist = 0;
+            for (let i = 0; i < path.length - 1; i++) {
+                const p1 = systemsData[path[i]];
+                const p2 = systemsData[path[i+1]];
+                totalDist += Math.sqrt((p1.x - p2.x)**2 + (p1.y - p2.y)**2 + (p1.z - p2.z)**2);
+            }
+            return totalDist;
+        }
+
+        function updateCopyButtons() {
+            copyButtonFrame.innerHTML = '';
+            if (!championPath) return;
+
+            const lines = championPath.map(name => {
+                const systemId = universeData[name]?.id;
+                return systemId ? `<a href="showinfo:5//${systemId}">${name}</a>` : '';
+            }).filter(Boolean);
+
+            let chunks = [];
+            let currentChunk = "";
+            for (const line of lines) {
+                if (currentChunk.length + line.length + 1 > 3800) {
+                    chunks.push(currentChunk.trim());
+                    currentChunk = line + '\n';
+                } else {
+                    currentChunk += line + '\n';
+                }
+            }
+            if (currentChunk) chunks.push(currentChunk.trim());
+
+            if (chunks.length <= 1) {
+                const btn = document.createElement('button');
+                btn.textContent = 'Copy Route';
+                btn.className = 'btn';
+                btn.onclick = () => copyChunk(btn, chunks[0] || '');
+                copyButtonFrame.appendChild(btn);
+            } else {
+                chunks.forEach((chunk, i) => {
+                    const btn = document.createElement('button');
+                    btn.textContent = `Copy Part ${i + 1}`;
+                    btn.className = 'btn';
+                    btn.onclick = () => copyChunk(btn, chunk);
+                    copyButtonFrame.appendChild(btn);
+                });
+            }
+        }
+
+        function copyChunk(button, text) {
+            navigator.clipboard.writeText(text).then(() => {
+                const originalText = button.textContent;
+                button.textContent = 'Copied!';
+                setTimeout(() => { button.textContent = originalText; }, 1500);
+            }).catch(err => logMessage('Failed to copy route.'));
+        }
+        
+        calculateButton.addEventListener('click', () => {
+            if (isCalculating) {
+                stopCalculation = true;
+                calculateButton.disabled = true;
+                statusBar.textContent = "Status: Stopping...";
+            } else {
+                runCalculation();
+            }
+        });
+
+        // --- Initial Load ---
+        initializeApp();
+
+    </script>
+</body>
+</html>
