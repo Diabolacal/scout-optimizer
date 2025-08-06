@@ -20,7 +20,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0  # Ensure history for backup moves
+          fetch-depth: 0  # Needed for renames/moves
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -33,6 +33,12 @@ jobs:
       - name: Fetch and Update Universe Data
         run: python fetch_universe.py
 
+      - name: Delete Old Backups (Keep Latest 3)
+        run: |
+          mkdir -p universe_backups
+          # Sort backups by modified time, remove all but 3 newest
+          ls -1t universe_backups/*.json 2>/dev/null | tail -n +4 | xargs -r rm -f
+
       - name: Commit & Push if Changed
         run: |
           if [ -f "universe_update_summary.txt" ]; then
@@ -44,4 +50,3 @@ jobs:
           else
             echo "No changes, skipping commit."
           fi
-
