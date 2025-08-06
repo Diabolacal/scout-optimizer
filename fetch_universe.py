@@ -4,7 +4,7 @@ import hashlib
 from pathlib import Path
 from datetime import datetime
 
-BASE_URL = "https://<world-api-url>/v2/solarsystems"  # Replace with actual API
+BASE_URL = "https://world-api-stillness.live.tech.evefrontier.com/v2/solarsystems"  # Replace with actual API
 LIMIT = 1000
 OUTPUT_FILE = Path("universe_data.json")
 BACKUP_DIR = Path("universe_backups")
@@ -98,5 +98,6 @@ if __name__ == "__main__":
             f"Update universe data: +{added} / -{removed} / ~{same} systems\n",
             encoding="utf-8"
         )
+
 
 
