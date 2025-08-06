@@ -3,7 +3,7 @@ SCOUT OPTIMIZER - USER DOCUMENTATION
 
 OVERVIEW
 --------
-Scout Optimizer is a high-performance route planning tool designed to find the shortest possible travel path between a large number of solar systems. You provide a starting system and a maximum radius, and the application calculates the most efficient route that visits every system in that range, saving you time and jumps.
+Scout Optimizer is a high-performance route planning tool for EVE Frontier, designed to find the shortest possible travel path between a large number of solar systems. You provide a starting system and a maximum radius, and the application calculates the most efficient route that visits every system in that range, saving you time and jumps.
 
 
 HOW IT WORKS: A TWO-STAGE PROCESS
