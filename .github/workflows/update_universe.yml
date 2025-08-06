@@ -44,5 +44,4 @@ jobs:
           else
             echo "No changes, skipping commit."
           fi
-"
-          fi
+
