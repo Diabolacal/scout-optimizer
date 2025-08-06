@@ -99,7 +99,4 @@ if __name__ == "__main__":
             encoding="utf-8"
         )
 
-    
-            encoding="utf-8"
-        )
 
