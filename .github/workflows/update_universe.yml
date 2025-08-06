@@ -1,8 +1,11 @@
 name: Update Universe Data (Test Branch)
 
 on:
+  push:
+    branches:
+      - test
   schedule:
-    - cron: "0 3 * * *"   # Runs daily at 03:00 UTC
+    - cron: "0 3 * * *"
   workflow_dispatch:
 
 jobs:
