@@ -63,3 +63,5 @@ The best strategy is to watch the output log. If you see that the "best distance
 ADDITIONAL OPTIONS
 ------------------
 * Copy Route: After a route is calculated, a copy button will appear. This will copy the ordered list of systems to your clipboard in the required in-game format.
+
+edit to keep automation running
